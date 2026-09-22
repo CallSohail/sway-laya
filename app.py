@@ -1,6 +1,17 @@
 """SWAY: a word game against the Laya decision engine. Hugging Face Spaces entry point."""
 from __future__ import annotations
 
+# ZeroGPU Spaces refuse to start without a @spaces.GPU function. SWAY runs on CPU,
+# so this stub is registered but never called and uses no GPU quota.
+try:
+    import spaces
+
+    @spaces.GPU(duration=5)
+    def _zerogpu_stub():
+        return None
+except ImportError:  # not installed locally or in CI
+    pass
+
 import json
 import logging
 import os
@@ -287,4 +298,5 @@ if __name__ == "__main__":
         server_name=os.environ.get("GRADIO_SERVER_NAME", "0.0.0.0"),
         server_port=int(os.environ.get("PORT", os.environ.get("GRADIO_SERVER_PORT", "7860"))),
         show_error=False,
+        ssr_mode=False,
     )

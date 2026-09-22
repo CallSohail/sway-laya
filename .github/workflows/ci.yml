@@ -19,7 +19,7 @@ jobs:
           pip install torch --index-url https://download.pytorch.org/whl/cpu
           pip install -r requirements-dev.txt
       - name: Fast tests
-        run: pytest -q tests/test_logic.py
+        run: python -m pytest -q tests/test_logic.py
       - name: App imports without loading models
         env:
           SWAY_SKIP_ENGINE: "1"

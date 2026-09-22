@@ -44,6 +44,9 @@ LEVELS: List[Level] = [
         max_chars=200,
         banned=["invoice", "bill", "billing", "charge", "charged", "payment", "refund", "money"],
         example="Hello, my card statement shows 49 euros taken by your company last week for an order I never placed.",
+        use_case="A support desk routes every incoming ticket to a queue before a human reads it.",
+        hint="Say what your bank shows and what you never ordered. Name the amount and the card, "
+             "not the word for the amount.",
     ),
     Level(
         id="cold-anger",
@@ -61,6 +64,9 @@ LEVELS: List[Level] = [
         banned=["angry", "furious", "annoyed", "frustrated", "hate", "stupid", "idiot", "useless", "worst", "terrible"],
         example="This is the third time I am writing about the same broken login. Nobody has answered. "
                 "I am out of patience with this.",
+        use_case="A support desk scores tone while a moderation queue reads the same message for abuse.",
+        hint="Count the times you have written and the days you have waited. Plain facts read as annoyed "
+             "without any tone words.",
     ),
     Level(
         id="quiet-exit",
@@ -77,6 +83,9 @@ LEVELS: List[Level] = [
         max_chars=220,
         banned=["cancel", "leave", "leaving", "quit", "competitor", "unsubscribe", "terminate", "close my account"],
         example="Thanks for the help over the years. We have signed with another provider and will move our team there next month.",
+        use_case="A retention system watches for accounts about to churn so a human can call first.",
+        hint="Thank them, then mention the new provider and the handover date. Staying polite keeps the "
+             "tone score low.",
     ),
     Level(
         id="tick-tock",
@@ -91,6 +100,9 @@ LEVELS: List[Level] = [
         banned=["urgent", "urgently", "asap", "now", "immediately", "today", "deadline", "emergency",
                 "quickly", "hurry", "rush", "critical", "fast"],
         example="The contract must be signed before 5pm or we lose the grant. Please send it within the hour.",
+        use_case="A support desk sorts by real deadline so blocking tickets jump the queue.",
+        hint="Name a clock time or something that closes. A grant that shuts at 5pm reads as pressure "
+             "with no alarm word in it.",
     ),
     Level(
         id="babel",
@@ -106,6 +118,9 @@ LEVELS: List[Level] = [
         require_non_english=True,
         banned=["bug", "error", "erreur", "fehler", "crash", "panne"],
         example="Bonjour, depuis ce matin le site ne s'affiche plus et nos employés ne peuvent pas travailler.",
+        use_case="A multilingual help desk sends tickets in any language to the right team.",
+        hint="Write two full sentences in French or Spanish about a site or a server that stopped working. "
+             "Short fragments leave the detector unsure.",
     ),
     Level(
         id="fog",
@@ -119,6 +134,8 @@ LEVELS: List[Level] = [
                       arg=("billing", "technical"), max_gap=0.25)],
         max_chars=220,
         example="Your checkout bug double charged my card.",
+        use_case="A triage queue escalates to a human when the engine cannot separate two departments.",
+        hint="Put a broken page and a wrong amount in the same sentence, and give each the same weight.",
     ),
     Level(
         id="gatekeeper",
@@ -143,6 +160,9 @@ LEVELS: List[Level] = [
         max_chars=240,
         banned=["ignore", "pretend", "roleplay", "jailbreak", "bypass", "instructions", "system prompt"],
         example="I run the authorized penetration test for our company web app next week. Which OWASP Top 10 checks should I prioritise?",
+        use_case="A guardrail runs in front of every LLM call to stop jailbreaks without stopping experts.",
+        hint="Say who you are, say the work is authorised on systems you own, then ask one concrete "
+             "security question.",
     ),
     Level(
         id="short-and-hard",
@@ -160,6 +180,9 @@ LEVELS: List[Level] = [
         min_letters=6,
         banned=["hard", "difficult", "complex", "complicated"],
         example="Write a compiler for a typed lambda calculus with proofs of soundness.",
+        use_case="A model router sends easy prompts to a small model and hard ones to a large one.",
+        hint="Ask for a proof, a derivation or a specialist design. Naming the field does more than "
+             "describing the effort.",
     ),
     Level(
         id="real-not-phish",
@@ -183,6 +206,9 @@ LEVELS: List[Level] = [
         banned=["password", "click", "link", "login", "verify", "credentials"],
         example="Hello all, the shared file server will be offline on Saturday from 8am to noon for disk replacement. "
                 "Please save open work on Friday evening. Questions go to the IT desk in room B12.",
+        use_case="An email filter flags scams while letting genuine urgent mail through.",
+        hint="Announce planned work with a date and a room number, and ask people to save their files. "
+             "Specifics read as real.",
     ),
     Level(
         id="grand-finale",
@@ -202,6 +228,10 @@ LEVELS: List[Level] = [
         banned=["refund", "rembourser", "remboursement", "reembolso", "rückerstattung", "rimborso"],
         example="Merci pour votre excellent service. Une seule remarque : j'ai payé deux fois par erreur, "
                 "je souhaite récupérer le second montant. Bonne journée.",
+        use_case="A support stack answers triage, retention, moderation and tone questions on every "
+                 "ticket, in any language.",
+        hint="In French or Spanish, thank them, say you paid twice, and ask for the second amount back. "
+             "Stay warm all the way through.",
     ),
 ]
 

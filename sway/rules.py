@@ -197,6 +197,8 @@ class Level:
     require_non_english: bool = False
     extra_state: Dict[str, str] = field(default_factory=dict)
     example: str = ""          # a known passing answer, used by tests, never shown
+    use_case: str = ""         # where this exact decision runs in a real product
+    hint: str = ""             # a nudge, not an answer. Using it caps the case at two stars
 
     def build_state(self, text: str) -> Dict[str, str]:
         state = dict(self.extra_state)
@@ -237,8 +239,11 @@ class Outcome:
     stars: int
 
 
-def judge(level: Level, answers: Dict[str, Any], shot_index: int) -> Outcome:
-    """Score one attempt. shot_index is 0 for the first shot."""
+def judge(level: Level, answers: Dict[str, Any], shot_index: int, hint_used: bool = False) -> Outcome:
+    """Score one attempt. shot_index is 0 for the first shot.
+
+    A hint caps the case at two stars: the score still stands, the third star does not.
+    """
     checks = [o.evaluate(answers, level.score_levels(o.q)) for o in level.objectives]
     passed = all(c.passed for c in checks)
     base = sum(c.quality for c in checks) / max(1, len(checks))
@@ -250,4 +255,6 @@ def judge(level: Level, answers: Dict[str, Any], shot_index: int) -> Outcome:
     stars = 0
     if passed:
         stars = 1 + (score >= 85) + (score >= 95 and shot_index == 0)
+        if hint_used:
+            stars = min(stars, 2)
     return Outcome(checks, passed, score, stars)

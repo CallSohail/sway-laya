@@ -12,7 +12,8 @@ MIN_SECONDS_BETWEEN_SHOTS = 1.0
 
 
 def new_session() -> Dict[str, Any]:
-    return {"best": {}, "stars": {}, "shots": {}, "unlocked": 1, "last_ts": 0.0, "history": []}
+    return {"best": {}, "stars": {}, "shots": {}, "unlocked": 1, "last_ts": 0.0, "history": [],
+            "hints": {}, "welcome_seen": False}
 
 
 def repair(session: Any) -> Dict[str, Any]:
@@ -20,10 +21,11 @@ def repair(session: Any) -> Dict[str, Any]:
     base = new_session()
     if not isinstance(session, dict):
         return base
-    for key in ("best", "stars", "shots"):
+    for key in ("best", "stars", "shots", "hints"):
         value = session.get(key)
         if isinstance(value, dict):
             base[key] = {k: int(v) for k, v in value.items() if k in BY_ID and isinstance(v, (int, float))}
+    base["welcome_seen"] = bool(session.get("welcome_seen"))
     unlocked = session.get("unlocked")
     if isinstance(unlocked, int):
         base["unlocked"] = max(1, min(len(LEVELS), unlocked))
@@ -38,6 +40,23 @@ def level_number(level_id: str) -> int:
 
 def is_unlocked(session: Dict[str, Any], level_id: str) -> bool:
     return level_id in BY_ID and level_number(level_id) <= session["unlocked"]
+
+
+def used_hint(session: Dict[str, Any], level_id: str) -> bool:
+    return bool(session.get("hints", {}).get(level_id))
+
+
+def use_hint(session: Dict[str, Any], level_id: str) -> str:
+    """Record that the hint was shown and return it. The case is capped at two stars."""
+    level = BY_ID.get(level_id)
+    if level is None or not level.hint:
+        return ""
+    session.setdefault("hints", {})[level_id] = 1
+    return level.hint
+
+
+def dismiss_welcome(session: Dict[str, Any]) -> None:
+    session["welcome_seen"] = True
 
 
 def shots_left(session: Dict[str, Any], level_id: str) -> int:
@@ -86,7 +105,7 @@ def play(session: Dict[str, Any], level_id: str, raw_text: str, engine,
     verdict = engine.predict(level.build_state(text), level.questions)
     shot_index = session["shots"].get(level_id, 0)
     session["shots"][level_id] = shot_index + 1
-    outcome = judge(level, verdict.answers, shot_index)
+    outcome = judge(level, verdict.answers, shot_index, hint_used=used_hint(session, level_id))
 
     new_best = False
     if outcome.passed:

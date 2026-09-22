@@ -5,7 +5,8 @@ import pytest
 
 from sway import render
 from sway.engine import Verdict, parse_checkpoints
-from sway.game import new_session, play, repair, reset_level, share_text, shots_left
+from sway.game import (dismiss_welcome, new_session, play, repair, reset_level, share_text, shots_left,
+                       use_hint, used_hint)
 from sway.lab import LabError, parse_state, validate_questions
 from sway.levels import BY_ID, LEVELS, SHOTS_PER_LEVEL
 from sway.rules import Objective, find_banned, judge, pre_check, sanitize
@@ -108,6 +109,7 @@ def test_levels_are_well_formed():
         for o in lvl.objectives:
             assert o.q in lvl.questions, (lvl.id, o.q)
         assert lvl.example, lvl.id
+        assert lvl.use_case and lvl.hint, lvl.id
         assert len(lvl.example) <= lvl.max_chars, lvl.id
         assert not find_banned(lvl.example, lvl.banned), (lvl.id, find_banned(lvl.example, lvl.banned))
         validate_questions(json.dumps(lvl.questions))
@@ -197,9 +199,51 @@ def test_over_limit_is_blocked_not_silently_clipped():
     assert turn.kind == "blocked"
 
 
+# ---------------------------------------------------------------- hints and onboarding
+
+def test_hint_caps_stars_at_two():
+    lvl = BY_ID["tick-tock"]
+    answers = {"urgent": ans_noul(0.99)}
+    assert judge(lvl, answers, 0).stars == 3
+    assert judge(lvl, answers, 0, hint_used=True).stars == 2
+    assert judge(lvl, {"urgent": ans_noul(0.2)}, 0, hint_used=True).stars == 0
+
+
+def test_using_a_hint_records_it_and_caps_the_case():
+    s = new_session()
+    assert not used_hint(s, "fog")
+    assert use_hint(s, "fog") == BY_ID["fog"].hint
+    assert used_hint(s, "fog")
+    eng = FakeEngine({"department": ans_choice({"billing": 0.4, "technical": 0.38, "sales": 0.12, "other": 0.1})})
+    turn = play(s, "fog", "x", eng, now=Clock())  # locked, so nothing is judged
+    assert turn.kind == "blocked"
+    assert use_hint(s, "nope") == ""
+
+
+def test_welcome_and_hint_flags_survive_repair():
+    s = new_session()
+    assert s["welcome_seen"] is False
+    dismiss_welcome(s)
+    use_hint(s, "fog")
+    fixed = repair(s)
+    assert fixed["welcome_seen"] is True
+    assert fixed["hints"] == {"fog": 1}
+    tampered = repair({"welcome_seen": "yes", "hints": {"not-a-level": 1, "fog": 1}})
+    assert tampered["welcome_seen"] is True and tampered["hints"] == {"fog": 1}
+    assert repair(None)["hints"] == {} and repair(None)["welcome_seen"] is False
+
+
+def test_hint_is_a_nudge_not_the_answer():
+    for lvl in LEVELS:
+        assert lvl.hint and lvl.hint != lvl.example
+        assert lvl.example.lower() not in lvl.hint.lower()
+        assert lvl.use_case.endswith("."), lvl.id
+
+
 def test_repair_rejects_tampered_state():
     s = repair({"best": {"first-contact": 90, "fake": 9999}, "unlocked": 999, "stars": "x", "last_ts": "y"})
     assert s["best"] == {"first-contact": 90} and s["unlocked"] == 10 and s["stars"] == {} and s["last_ts"] == 0.0
+    assert s["hints"] == {} and s["welcome_seen"] is False
     assert repair(None)["unlocked"] == 1
 
 

@@ -40,9 +40,48 @@ language routing do.
 | 10 | Grand finale | A calm non-English refund request with no churn and no toxicity |
 
 Five shots per case. A shot blocked by a rule (banned word, length, language) is free. Scores reward
-passing with margin; three stars need a strong pass on the first shot. Progress is kept in the browser.
+passing with margin; three stars need a strong pass on the first shot. Every case carries a hint; using it
+caps that case at two stars. Progress is kept in the browser.
+
+Each case also names the product it comes from, so the case card says where that exact decision runs.
 
 The Lab tab runs any preset or custom question set on any input and shows the full answer.
+
+## Autoplay
+
+The Autoplay tab plays the game by itself, with Laya making every decision. Pick one case or all of them,
+press start, and watch the search stream.
+
+For each case the player composes eight candidate messages from a library of phrase fragments, runs them
+through the same sanitiser and rule checks a human shot goes through, and drops the blocked ones for free.
+The survivors are scored by the engine. It keeps the best three and mutates them: swap a fragment, drop a
+clause, add a closing line. It stops at the first candidate scoring 95 or more, or when the case runs out
+of model calls.
+
+| Setting | Meaning |
+|---|---|
+| Quick | 12 model calls per case |
+| Thorough | 30 model calls per case |
+| Seed | Same seed, same search. Default 42 |
+
+A whole run stops at 300 model calls or six minutes, whichever comes first. The final card reports cases
+solved, average best score, model calls, average decision time and total time, and compares the machine's
+best scores to yours. Your own progress is only read, never changed.
+
+Non-English cases get French and Spanish fragments, so a candidate is never a mix of two languages and the
+router always has a full sentence to detect.
+
+## Where these decisions run
+
+| Use case | What the engine decides |
+|---|---|
+| Support triage | Which queue a ticket belongs to, and how frustrated the customer sounds |
+| Moderation | Whether a post is toxic, in the same pass that reads it for anything else |
+| LLM guardrails | Whether a prompt is a jailbreak or an injection, before the model call |
+| Model routing | How hard a request is, so easy ones go to a small model |
+| Email security | Whether an urgent mail is genuine or phishing |
+| Multilingual routing | Which checkpoint answers, from script and language detected first |
+| Confidence-gated automation | Act above a threshold, send everything under it to a person |
 
 ## Run locally
 
@@ -68,8 +107,9 @@ The first start downloads the checkpoints (about 1.5 GB for English plus multili
 ## Tests
 
 ```bash
-pytest -q tests/test_logic.py                                   # fast, no model
-SWAY_MODEL_TESTS=1 pytest -q tests/test_levels_model.py         # every case has a known passing answer
+pytest -q                                                       # fast, no model
+SWAY_MODEL_TESTS=1 pytest -q tests/test_levels_model.py         # every case has a known passing answer,
+                                                                # and Quick autoplay solves at least 6 of 10
 ```
 
 ## API

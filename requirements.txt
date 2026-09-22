@@ -1,0 +1,5 @@
+laya==0.3.5
+gradio==6.28.0
+torch>=2.2
+transformers>=4.48
+huggingface_hub>=0.20
